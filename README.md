@@ -6,7 +6,8 @@ These sensors already incorporate an STM32 microcontroller and support UART outp
 (unless you want multiple sensors, that is). Therefore I decided to write a simple desktop program to collect data from the sensor.
 
 Features:
- - Live plot
- - CSV log
+ - Reading "non-normalized" and "normalized" CO2 levels
+ - Live plot [WIP]
+ - CSV log [WIP]
  - Cross-platform (.NET 6.0 + Avalonia UI)
- 
+ - Some configuration tools will be added later, probably [WIP]
