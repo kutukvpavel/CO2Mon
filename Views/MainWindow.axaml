@@ -9,6 +9,25 @@
         Icon="/Assets/avalonia-logo.ico"
         Title="CO2Mon">
 
-    <ScottPlot:AvaPlot Name="pltMain"/>
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="File">
+                <MenuItem Header="Open..."/>
+                <MenuItem Header="Save As..."/>
+                <Separator/>
+                <MenuItem Header="Exit"/>
+            </MenuItem>
+            <MenuItem Header="Controller">
+                <MenuItem Header="Port"/>
+                <MenuItem Header="Connect"/>
+                <MenuItem Header="Disconnect"/>
+            </MenuItem>
+        </Menu>
+        <ScottPlot:AvaPlot Name="pltMain"/>
+        <ItemsControl DockPanel.Dock="Bottom">
+            <TextBlock>Status: </TextBlock>
+            <TextBlock Content="{Binding StatusText}"/>
+        </ItemsControl>
+    </DockPanel>
 
 </Window>

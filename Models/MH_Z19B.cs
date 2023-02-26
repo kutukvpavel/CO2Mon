@@ -61,7 +61,7 @@ namespace CO2Mon.Models
         public ushort LimitedCO2 { get; }
     }
 
-    public class MH_Z19B
+    public class MH_Z19B : IDisposable
     {
         public const int PacketLength = 9; //Bytes
         public const int MaxRequestArgs = MH_Z19_Req_Structure.CRC - MH_Z19_Req_Structure.ArgumentBegin;
@@ -71,6 +71,7 @@ namespace CO2Mon.Models
         public static int Timeout { get; set; } = 3000; //mS
 #warning Change the following default value to something larger for production
         public static int InitialCapacity { get; set; } = 10; //Points per channel
+        public static int ConnectionFailureLimit { get; set; } = 5;
 
         public static event EventHandler<string>? OnLog;
         private static void Log(object? sender, string s)
@@ -100,20 +101,26 @@ namespace CO2Mon.Models
         }
 
         public event EventHandler<MH_Z19B_DataPoint>? OnNewDataReceived;
+        public event EventHandler? OnConnected;
+        public event EventHandler? OnDisconnected;
 
         //Private
         private readonly Timer timPoll = new(PollInterval) { AutoReset = true, Enabled = false };
         private CancellationTokenSource tknSource = new();
+        private int connectionFailures = 0;
 
         private void timPoll_Elapsed(object? sender, ElapsedEventArgs e)
         {
+            if (tknSource.IsCancellationRequested) return;
             if (Port.IsOpen)
             {
+                connectionFailures = 0;
                 Poll().Wait();
             }
             else //Try to reconnect after serial adapter disconnection
             {
-                Connect().Wait();
+                if (connectionFailures++ < ConnectionFailureLimit || ConnectionFailureLimit < 0) Connect().Wait();
+                else Disconnect(false);
             }
         }
         private async Task Poll()
@@ -133,9 +140,7 @@ namespace CO2Mon.Models
                 var u = BitConverter.ToUInt16(unlim, 2);
                 PointsUnlimited.Add(new Coordinates(x, u));
 
-                Dispatcher.UIThread.Post(() => { 
-                    OnNewDataReceived?.Invoke(this, new MH_Z19B_DataPoint(dt, u, l)); 
-                });
+                OnNewDataReceived?.Invoke(this, new MH_Z19B_DataPoint(dt, u, l));
             }
             catch (Exception ex)
             {
@@ -162,6 +167,7 @@ namespace CO2Mon.Models
         private async Task<byte[]> ExchageData(byte cmd, params byte[] args)
         {
             if ((args?.Length ?? 0) > MaxRequestArgs) throw new ArgumentOutOfRangeException(nameof(args));
+            if (tknSource.IsCancellationRequested) return Array.Empty<byte>();
 
             //Construct command
             byte[] request = new byte[PacketLength];
@@ -206,6 +212,7 @@ namespace CO2Mon.Models
                 if (await VerifyConnection()) 
                 {
                     Log(this, "Found the device.");
+                    OnConnected?.Invoke(this, new EventArgs());
                 }
                 else
                 {
@@ -218,10 +225,10 @@ namespace CO2Mon.Models
                 Log(this, $"Failed to connect to the device: {ex}");
             }
         }
-        public void Disconnect()
+        private void Disconnect(bool _throw = false)
         {
-            if (!IsConnected) throw new InvalidOperationException("Already closed.");
             if (IsPolling) StopPoll();
+            if (_throw) if (!IsConnected) throw new InvalidOperationException("Already closed.");
             if (!tknSource.IsCancellationRequested) tknSource.Cancel();
             try
             {
@@ -231,6 +238,11 @@ namespace CO2Mon.Models
             {
                 Log(this, $"Failed to disconnect from the device: {ex}");
             }
+            OnDisconnected?.Invoke(this, new EventArgs());
+        }
+        public void Disconnect()
+        {
+            Disconnect(true);
         }
         public void StartPoll()
         {
@@ -251,6 +263,14 @@ namespace CO2Mon.Models
             if (IsPolling) throw new InvalidOperationException("Unable to send a custom command during continuous polling.");
 
             return await ExchageData(cmd, args);
+        }
+
+        public void Dispose()
+        {
+            if (IsConnected) Disconnect();
+            Port.Dispose();
+
+            GC.SuppressFinalize(this);
         }
     }
 }
