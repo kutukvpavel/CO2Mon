@@ -17,6 +17,11 @@ public class MainWindowViewModel : ViewModelBase
     public event EventHandler? OnConnected;
     public event EventHandler? OnDisconnected;
 
+    public MainWindowViewModel(string port)
+    {
+        CreateController(port);
+    }
+
     public MH_Z19B? Controller { get; private set; }
     public bool IsConnected => Controller?.IsConnected ?? false;
     public bool IsPolling { 
@@ -53,7 +58,9 @@ public class MainWindowViewModel : ViewModelBase
     {
         Dispatcher.UIThread.Post(() =>
         {
-            this.RaisePropertyChanged();
+            this.RaisePropertyChanged(nameof(StatusText));
+            this.RaisePropertyChanged(nameof(IsConnected));
+            this.RaisePropertyChanged(nameof(IsPolling));
             OnConnected?.Invoke(this, new EventArgs());
         });
     }
@@ -61,7 +68,9 @@ public class MainWindowViewModel : ViewModelBase
     {
         Dispatcher.UIThread.Post(() =>
         {
-            this.RaisePropertyChanged();
+            this.RaisePropertyChanged(nameof(StatusText));
+            this.RaisePropertyChanged(nameof(IsConnected));
+            this.RaisePropertyChanged(nameof(IsPolling));
             OnDisconnected?.Invoke(this, new EventArgs());
         });
     }

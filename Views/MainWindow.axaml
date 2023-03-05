@@ -4,30 +4,29 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:ScottPlot="clr-namespace:ScottPlot.Avalonia;assembly=ScottPlot.Avalonia"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://raw.githubusercontent.com/rogalmic/vscode-xml-complete/master/test/Avalonia/AvaloniaXamlSchema.xsd"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="CO2Mon.Views.MainWindow"
         Icon="/Assets/avalonia-logo.ico"
         Title="CO2Mon">
 
-    <DockPanel>
-        <Menu DockPanel.Dock="Top">
+    <Grid RowDefinitions="auto,*,auto">
+        <Menu Grid.Row="0">
             <MenuItem Header="File">
                 <MenuItem Header="Open..."/>
                 <MenuItem Header="Save As..."/>
-                <Separator/>
-                <MenuItem Header="Exit"/>
             </MenuItem>
             <MenuItem Header="Controller">
-                <MenuItem Header="Port"/>
-                <MenuItem Header="Connect"/>
-                <MenuItem Header="Disconnect"/>
+                <MenuItem Header="Connect" IsEnabled="{Binding !IsConnected}" Click="Connect_Click"/>
+                <MenuItem Header="Disconnect" IsEnabled="{Binding IsConnected}" Click="Disconnect_Click"/>
             </MenuItem>
         </Menu>
-        <ScottPlot:AvaPlot Name="pltMain"/>
-        <ItemsControl DockPanel.Dock="Bottom">
-            <TextBlock>Status: </TextBlock>
-            <TextBlock Content="{Binding StatusText}"/>
-        </ItemsControl>
-    </DockPanel>
+        <ScottPlot:AvaPlot Grid.Row="1"  Name="pltMain"/>
+        <StackPanel Grid.Row="2" Orientation="Horizontal" DockPanel.Dock="Bottom">
+            <TextBlock Text="Status: "></TextBlock>
+            <TextBlock Text="{Binding StatusText}"/>
+        </StackPanel>
+    </Grid>
 
 </Window>

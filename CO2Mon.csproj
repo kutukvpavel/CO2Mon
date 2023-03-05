@@ -7,6 +7,11 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+  </PropertyGroup>
+
+
   <ItemGroup>
     <Folder Include="Models\" />
     <AvaloniaResource Include="Assets\**" />

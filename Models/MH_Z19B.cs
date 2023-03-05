@@ -66,9 +66,10 @@ namespace CO2Mon.Models
         public const int PacketLength = 9; //Bytes
         public const int MaxRequestArgs = MH_Z19_Req_Structure.CRC - MH_Z19_Req_Structure.ArgumentBegin;
 
+        public static bool AutoPoll {get;set;} = true;
         public static int BaudRate { get; set; } = 9600;
         public static int PollInterval { get; set; } = 1000; //mS
-        public static int Timeout { get; set; } = 3000; //mS
+        public static int Timeout { get; set; } = 5000; //mS
 #warning Change the following default value to something larger for production
         public static int InitialCapacity { get; set; } = 10; //Points per channel
         public static int ConnectionFailureLimit { get; set; } = 5;
@@ -133,11 +134,11 @@ namespace CO2Mon.Models
                 var x = dt.ToOADate(); 
 
                 var limited = await ExchageData((byte)MH_Z19B_Commands.GetLimited);
-                var l = BitConverter.ToUInt16(limited);
+                var l = BitConverter.ToUInt16(limited.Take(2).Reverse().ToArray());
                 PointsLimited.Add(new Coordinates(x, l));
 
                 var unlim = await ExchageData((byte)MH_Z19B_Commands.GetUnlimited);
-                var u = BitConverter.ToUInt16(unlim, 2);
+                var u = BitConverter.ToUInt16(unlim.Skip(2).Take(2).Reverse().ToArray());
                 PointsUnlimited.Add(new Coordinates(x, u));
 
                 OnNewDataReceived?.Invoke(this, new MH_Z19B_DataPoint(dt, u, l));
@@ -149,18 +150,23 @@ namespace CO2Mon.Models
         }
         private async Task<bool> VerifyConnection()
         {
+            Log(this, "Connection verification...");
             try
             {
                 byte[] first = await ExchageData((byte)MH_Z19B_Commands.GetUnlimited);
                 byte[] second = await ExchageData((byte)MH_Z19B_Commands.RepeatLastResp);
-                return first.SequenceEqual(second);
+                bool res = first.Take(4).SequenceEqual(second.Take(4));
+                Log(this, $"Responses match: {(res ? "yes" : "no")}");
+                return res;
             }
             catch (DataValidationException)
             {
+                Log(this, "CRC doesn't match");
                 return false;
             }
             catch (TimeoutException)
             {
+                Log(this, "Timeout");
                 return false;
             }
         }
@@ -184,10 +190,11 @@ namespace CO2Mon.Models
 
             //Check CRC
             if (read < PacketLength) throw new TimeoutException();
-            byte crcIn = ComputeCrc(response);
-            if (request[(int)MH_Z19_Req_Structure.CRC] != crcIn)
+            byte crcComp = ComputeCrc(response);
+            byte crcResp = response[(int)MH_Z19_Resp_Structure.CRC];
+            if (crcComp != crcResp)
             {
-                Log(this, $"CRC Error: out = {request[(int)MH_Z19_Req_Structure.CRC]:X2}, in = {crcIn:X2}");
+                Log(this, $"CRC Error: response = {crcResp:X2}, computed = {crcComp:X2}");
                 throw new DataValidationException(null);
             }
 
@@ -209,10 +216,13 @@ namespace CO2Mon.Models
             try
             {
                 Port.Open();
+                await Task.Delay(1000);
+                Port.DiscardInBuffer();
                 if (await VerifyConnection()) 
                 {
                     Log(this, "Found the device.");
                     OnConnected?.Invoke(this, new EventArgs());
+                    if (AutoPoll) StartPoll();
                 }
                 else
                 {
@@ -233,6 +243,7 @@ namespace CO2Mon.Models
             try
             {
                 Port.Close();
+                Log(this, "Disconnected from the device.");
             }
             catch (Exception ex)
             {
@@ -248,13 +259,15 @@ namespace CO2Mon.Models
         {
             if (IsPolling) throw new InvalidOperationException("Already polling.");
             if (!IsConnected) throw new InvalidOperationException("Unable to poll the device, the port is closed.");
-
+            
+            Log(this, "Starting continuous polling.");
             timPoll.Start();
         }
         public void StopPoll()
         {
             if (!IsPolling) throw new InvalidOperationException("Already idling.");
 
+            Log(this, "Stopping continuous polling.");
             timPoll.Stop();
         }
         public async Task<byte[]> ExecuteCommand(byte cmd, params byte[] args)

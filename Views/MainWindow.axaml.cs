@@ -1,5 +1,6 @@
 using System;
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using CO2Mon.ViewModels;
 using ScottPlot;
 
@@ -22,18 +23,33 @@ public partial class MainWindow : Window
         vm.OnNewDataReceived += ViewModel_NewDataReceived;
         vm.OnConnected += ViewModel_Connected;
         vm.OnDisconnected += ViewModel_Disconnected;
+
+        pltMain.Plot.Axes.DateTimeTicks(Edge.Bottom);
+    }
+
+    public async void Connect_Click(object? sender, RoutedEventArgs e)
+    {
+        if (viewModel?.Controller != null) await viewModel.Controller.Connect();
+    }
+    public void Disconnect_Click(object? sender, RoutedEventArgs e)
+    {
+        if (viewModel?.Controller != null) viewModel.Controller.Disconnect();
     }
 
     void ViewModel_NewDataReceived(object? sender, EventArgs e)
     {
+        pltMain.Plot.AutoScale();
         pltMain.Refresh();
     }
     void ViewModel_Connected(object? sender, EventArgs e)
     {
         if (viewModel == null || viewModel.Controller == null) throw new InvalidOperationException("Controller can not be null here");
         pltMain.Plot.Clear();
-        pltMain.Plot.Add.Scatter(viewModel.Controller.PointsLimited);
-        pltMain.Plot.Add.Scatter(viewModel.Controller.PointsUnlimited);
+        var lim = pltMain.Plot.Add.Scatter(viewModel.Controller.PointsLimited);
+        lim.Label = "CO2 limited, ppm";
+        var unlim = pltMain.Plot.Add.Scatter(viewModel.Controller.PointsUnlimited);
+        unlim.Label = "CO2 unlimited";
+        pltMain.Refresh();
     }
     void ViewModel_Disconnected(object? sender, EventArgs e)
     {
