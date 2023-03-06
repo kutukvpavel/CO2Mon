@@ -216,7 +216,7 @@ namespace CO2Mon.Models
             try
             {
                 Port.Open();
-                await Task.Delay(1000);
+                await Task.Delay(3000);
                 Port.DiscardInBuffer();
                 if (await VerifyConnection()) 
                 {

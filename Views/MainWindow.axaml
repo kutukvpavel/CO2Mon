@@ -14,8 +14,7 @@
     <Grid RowDefinitions="auto,*,auto">
         <Menu Grid.Row="0">
             <MenuItem Header="File">
-                <MenuItem Header="Open..."/>
-                <MenuItem Header="Save As..."/>
+                <MenuItem Header="Save As..." Click="Save_Click"/>
             </MenuItem>
             <MenuItem Header="Controller">
                 <MenuItem Header="Connect" IsEnabled="{Binding !IsConnected}" Click="Connect_Click"/>
