@@ -112,16 +112,19 @@ namespace CO2Mon.Models
 
         private void timPoll_Elapsed(object? sender, ElapsedEventArgs e)
         {
-            if (tknSource.IsCancellationRequested) return;
-            if (Port.IsOpen)
+            lock (timPoll)
             {
-                connectionFailures = 0;
-                Poll().Wait();
-            }
-            else //Try to reconnect after serial adapter disconnection
-            {
-                if (connectionFailures++ < ConnectionFailureLimit || ConnectionFailureLimit < 0) Connect().Wait();
-                else Disconnect(false);
+                if (tknSource.IsCancellationRequested) return;
+                if (Port.IsOpen)
+                {
+                    connectionFailures = 0;
+                    Poll().Wait();
+                }
+                else //Try to reconnect after serial adapter disconnection
+                {
+                    if (connectionFailures++ < ConnectionFailureLimit || ConnectionFailureLimit < 0) Connect().Wait();
+                    else Disconnect(false);
+                }
             }
         }
         private async Task Poll()
@@ -153,10 +156,12 @@ namespace CO2Mon.Models
             Log(this, "Connection verification...");
             try
             {
+                Log(this, "\tSending GetUnlim request...");
                 byte[] first = await ExchageData((byte)MH_Z19B_Commands.GetUnlimited);
+                Log(this, "\tSending RepeatLastResponse request...");
                 byte[] second = await ExchageData((byte)MH_Z19B_Commands.RepeatLastResp);
                 bool res = first.Take(4).SequenceEqual(second.Take(4));
-                Log(this, $"Responses match: {(res ? "yes" : "no")}");
+                Log(this, $"\tResponses match: {(res ? "yes" : "no")}");
                 return res;
             }
             catch (DataValidationException)
@@ -186,7 +191,11 @@ namespace CO2Mon.Models
             //Send and wait for a response
             await Port.WriteAsync(request, 0, request.Length, tknSource.Token);
             byte[] response = new byte[PacketLength];
-            int read = await Port.ReadAsync(response, 0, response.Length, tknSource.Token);
+            int read = 0;
+            while (read < response.Length)
+            {
+                read += await Port.ReadAsync(response, read, response.Length - read, tknSource.Token);
+            }
 
             //Check CRC
             if (read < PacketLength) throw new TimeoutException();
@@ -216,7 +225,7 @@ namespace CO2Mon.Models
             try
             {
                 Port.Open();
-                await Task.Delay(1000);
+                await Task.Delay(3000);
                 Port.DiscardInBuffer();
                 if (await VerifyConnection()) 
                 {
@@ -276,6 +285,17 @@ namespace CO2Mon.Models
             if (IsPolling) throw new InvalidOperationException("Unable to send a custom command during continuous polling.");
 
             return await ExchageData(cmd, args);
+        }
+        public async Task ClearPoints()
+        {
+            await Task.Run(() =>
+            {
+                lock (timPoll)
+                {
+                    PointsLimited.Clear();
+                    PointsUnlimited.Clear();
+                }
+            });
         }
 
         public void Dispose()

@@ -35,6 +35,10 @@ public partial class MainWindow : Window
     {
         if (viewModel?.Controller != null) viewModel.Controller.Disconnect();
     }
+    public async void Clear_Click(object? sender, RoutedEventArgs e)
+    {
+        if (viewModel?.Controller != null) await viewModel.Controller.ClearPoints();
+    }
 
     void ViewModel_NewDataReceived(object? sender, EventArgs e)
     {
@@ -47,8 +51,10 @@ public partial class MainWindow : Window
         pltMain.Plot.Clear();
         var lim = pltMain.Plot.Add.Scatter(viewModel.Controller.PointsLimited);
         lim.Label = "CO2 limited, ppm";
+        lim.MarkerStyle = MarkerStyle.None;
         var unlim = pltMain.Plot.Add.Scatter(viewModel.Controller.PointsUnlimited);
         unlim.Label = "CO2 unlimited";
+        unlim.MarkerStyle = MarkerStyle.None;
         pltMain.Refresh();
     }
     void ViewModel_Disconnected(object? sender, EventArgs e)

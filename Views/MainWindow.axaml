@@ -21,6 +21,9 @@
                 <MenuItem Header="Connect" IsEnabled="{Binding !IsConnected}" Click="Connect_Click"/>
                 <MenuItem Header="Disconnect" IsEnabled="{Binding IsConnected}" Click="Disconnect_Click"/>
             </MenuItem>
+            <MenuItem Header="Graph">
+                <MenuItem Header="Clear" Click="Clear_Click"/>
+            </MenuItem>
         </Menu>
         <ScottPlot:AvaPlot Grid.Row="1"  Name="pltMain"/>
         <StackPanel Grid.Row="2" Orientation="Horizontal" DockPanel.Dock="Bottom">
