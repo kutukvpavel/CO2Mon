@@ -48,6 +48,10 @@ public partial class MainWindow : Window
     {
         if (viewModel?.Controller != null) viewModel.Controller.Disconnect();
     }
+    public async void Clear_Click(object? sender, RoutedEventArgs e)
+    {
+        if (viewModel?.Controller != null) await viewModel.Controller.ClearPoints();
+    }
 
     void ViewModel_NewDataReceived(object? sender, EventArgs e)
     {
