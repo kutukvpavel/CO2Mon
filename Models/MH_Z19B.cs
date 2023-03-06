@@ -70,8 +70,7 @@ namespace CO2Mon.Models
         public static int BaudRate { get; set; } = 9600;
         public static int PollInterval { get; set; } = 1000; //mS
         public static int Timeout { get; set; } = 5000; //mS
-#warning Change the following default value to something larger for production
-        public static int InitialCapacity { get; set; } = 10; //Points per channel
+        public static int InitialCapacity { get; set; } = 7200; //Points per channel
         public static int ConnectionFailureLimit { get; set; } = 5;
 
         public static event EventHandler<string>? OnLog;
