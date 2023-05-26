@@ -72,6 +72,7 @@ namespace CO2Mon.Models
         public static int Timeout { get; set; } = 5000; //mS
         public static int InitialCapacity { get; set; } = 7200; //Points per channel
         public static int ConnectionFailureLimit { get; set; } = 5;
+        public static bool AutoDisableABC {get;set;} = true;
 
         public static event EventHandler<string>? OnLog;
         private static void Log(object? sender, string s)
@@ -229,8 +230,9 @@ namespace CO2Mon.Models
                 if (await VerifyConnection()) 
                 {
                     Log(this, "Found the device.");
-                    OnConnected?.Invoke(this, new EventArgs());
+                    if (AutoDisableABC) await SetABC(false);
                     if (AutoPoll) StartPoll();
+                    OnConnected?.Invoke(this, new EventArgs());
                 }
                 else
                 {
@@ -242,6 +244,13 @@ namespace CO2Mon.Models
             {
                 Log(this, $"Failed to connect to the device: {ex}");
             }
+        }
+        private async Task SetABC(bool enable)
+        {
+            byte[] resp = await ExchageData((byte)MH_Z19B_Commands.SetABC, enable ? (byte)0xA0 : (byte)0x00);
+            Log(this, $"ABC {(enable ? "enabled" : "disabled")}, resp = {string.Join(' ', resp.Select(x => x.ToString("X2")))}");
+            resp = await ExchageData((byte)MH_Z19B_Commands.GetABC);
+            Log(this, $"Reported ABC state: {string.Join(' ', resp.Select(x => x.ToString("X2")))}");
         }
         private void Disconnect(bool _throw = false)
         {

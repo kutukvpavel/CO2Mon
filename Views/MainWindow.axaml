@@ -19,6 +19,19 @@
             <MenuItem Header="Controller">
                 <MenuItem Header="Connect" IsEnabled="{Binding !IsConnected}" Click="Connect_Click"/>
                 <MenuItem Header="Disconnect" IsEnabled="{Binding IsConnected}" Click="Disconnect_Click"/>
+                <MenuItem Header="Poll" Click="Poll_Click">
+                    <MenuItem.Icon>
+                        <CheckBox BorderThickness="0"
+                                IsHitTestVisible="False"
+                                IsChecked="{Binding IsPolling, Mode=OneWay}"
+                                IsEnabled="{Binding IsConnected, Mode=OneWay}"
+                                Name="chkPoll">
+                        </CheckBox>
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+            <MenuItem Header="Sensor">
+                <MenuItem Header="Calibrate zero-point (400 ppm)" IsEnabled="{Binding !IsPolling}" Click="Calibrate_Click"></MenuItem>
             </MenuItem>
             <MenuItem Header="Graph">
                 <MenuItem Header="Clear" Click="Clear_Click"/>

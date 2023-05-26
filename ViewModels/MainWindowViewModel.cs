@@ -31,6 +31,8 @@ public class MainWindowViewModel : ViewModelBase
             if (value == Controller?.IsPolling) return;
             if (value) Controller?.StartPoll();
             else Controller?.StopPoll();
+            this.RaisePropertyChanged(nameof(IsPolling));
+            this.RaisePropertyChanged(nameof(StatusText));
         }
     }
     public string StatusText 
@@ -49,6 +51,10 @@ public class MainWindowViewModel : ViewModelBase
         Controller.OnConnected += Controller_Connected;
         Controller.OnDisconnected += Controller_Disconnected;
     }
+    public async void CalibrateSensor()
+    {
+        if (Controller != null) await Controller.ExecuteCommand((byte)MH_Z19B_Commands.CalibrateOffset);
+    }
 
     private void Controller_NewDataReceived(object? sender, MH_Z19B_DataPoint e)
     {
@@ -58,9 +64,9 @@ public class MainWindowViewModel : ViewModelBase
     {
         Dispatcher.UIThread.Post(() =>
         {
-            this.RaisePropertyChanged(nameof(StatusText));
             this.RaisePropertyChanged(nameof(IsConnected));
             this.RaisePropertyChanged(nameof(IsPolling));
+            this.RaisePropertyChanged(nameof(StatusText));
             OnConnected?.Invoke(this, new EventArgs());
         });
     }
@@ -68,9 +74,9 @@ public class MainWindowViewModel : ViewModelBase
     {
         Dispatcher.UIThread.Post(() =>
         {
-            this.RaisePropertyChanged(nameof(StatusText));
             this.RaisePropertyChanged(nameof(IsConnected));
             this.RaisePropertyChanged(nameof(IsPolling));
+            this.RaisePropertyChanged(nameof(StatusText));
             OnDisconnected?.Invoke(this, new EventArgs());
         });
     }

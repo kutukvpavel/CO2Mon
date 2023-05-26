@@ -52,6 +52,17 @@ public partial class MainWindow : Window
     {
         if (viewModel?.Controller != null) await viewModel.Controller.ClearPoints();
     }
+    public void Poll_Click(object? sender, RoutedEventArgs e)
+    {
+        if (viewModel?.Controller != null) 
+        {
+            viewModel.IsPolling = !viewModel.IsPolling;
+        }
+    }
+    public async void Calibrate_Click(object? sender, RoutedEventArgs e)
+    {
+        if (viewModel?.Controller != null) await viewModel.Controller.ClearPoints();
+    }
 
     void ViewModel_NewDataReceived(object? sender, EventArgs e)
     {
