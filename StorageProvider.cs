@@ -42,7 +42,10 @@ public static class StorageProvider
         w.WriteField("DateTime");
         w.WriteField("TotalSeconds");
         w.WriteField("Lim PPM");
+        w.WriteField("DateTime");
+        w.WriteField("TotalSeconds");
+        w.WriteField("Raw transmittance (au)");
         await w.NextRecordAsync();
-        await CsvEngine(w, new List<Coordinates>[] { ctrl.PointsUnlimited, ctrl.PointsLimited });
+        await CsvEngine(w, new List<Coordinates>[] { ctrl.PointsUnlimited, ctrl.PointsLimited, ctrl.PointsRaw });
     }
 }
