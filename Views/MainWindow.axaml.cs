@@ -13,9 +13,11 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         this.Opened += MainWindow_Opened;
+        rightYAxis = new ScottPlot.Axis.StandardAxes.RightAxis();
     }
     
     MainWindowViewModel? viewModel;
+    readonly ScottPlot.Axis.StandardAxes.RightAxis rightYAxis;
 
     void MainWindow_Opened(object? sender, EventArgs e)
     {
@@ -28,6 +30,8 @@ public partial class MainWindow : Window
         pltMain.Plot.Axes.DateTimeTicks(Edge.Bottom);
         pltMain.Plot.GetLegend().Alignment = Alignment.LowerLeft;
         pltMain.Plot.YAxis.Label.Text = "ppm";
+        rightYAxis.Label.Text = "Transmittance, au";
+        pltMain.Plot.YAxes.Add(rightYAxis);
     }
 
     public async void Save_Click(object? sender, RoutedEventArgs e)
@@ -82,13 +86,10 @@ public partial class MainWindow : Window
         var unlim = pltMain.Plot.Add.Scatter(viewModel.Controller.PointsUnlimited);
         unlim.Label = "CO2 unlimited";
         unlim.MarkerStyle = MarkerStyle.None;
-        var ry = new ScottPlot.Axis.StandardAxes.RightAxis();
-        ry.Label.Text = "au";
-        pltMain.Plot.YAxes.Add(ry);
         var raw = pltMain.Plot.Add.Scatter(viewModel.Controller.PointsRaw);
         raw.Label = "CO2 raw";
         raw.MarkerStyle = MarkerStyle.None;
-        raw.Axes.YAxis = ry;
+        raw.Axes.YAxis = rightYAxis;
         pltMain.Refresh();
     }
     void ViewModel_Disconnected(object? sender, EventArgs e)
