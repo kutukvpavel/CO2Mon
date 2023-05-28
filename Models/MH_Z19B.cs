@@ -49,16 +49,18 @@ namespace CO2Mon.Models
 
     public class MH_Z19B_DataPoint
     {
-        public MH_Z19B_DataPoint(DateTime dt, ushort u, ushort l)
+        public MH_Z19B_DataPoint(DateTime dt, ushort u, ushort l, ushort r)
         {
             Timestamp = dt;
             UnlimitedCO2 = u;
             LimitedCO2 = l;
+            RawCO2 = r;
         }
 
         public DateTime Timestamp { get; }
         public ushort UnlimitedCO2 { get; }
         public ushort LimitedCO2 { get; }
+        public ushort RawCO2 { get; }
     }
 
     public class MH_Z19B : IDisposable
@@ -144,7 +146,11 @@ namespace CO2Mon.Models
                 var u = BitConverter.ToUInt16(unlim.Skip(2).Take(2).Reverse().ToArray());
                 PointsUnlimited.Add(new Coordinates(x, u));
 
-                OnNewDataReceived?.Invoke(this, new MH_Z19B_DataPoint(dt, u, l));
+                var raw = await ExchageData((byte)MH_Z19B_Commands.GetRaw);
+                var r = BitConverter.ToUInt16(raw.Take(2).Reverse().ToArray());
+                PointsRaw.Add(new Coordinates(x, r));
+
+                OnNewDataReceived?.Invoke(this, new MH_Z19B_DataPoint(dt, u, l, r));
             }
             catch (Exception ex)
             {
@@ -213,6 +219,7 @@ namespace CO2Mon.Models
 
         //Public
         public SerialPortStream Port { get; }
+        public List<Coordinates> PointsRaw { get; } = new List<Coordinates>(InitialCapacity);
         public List<Coordinates> PointsLimited { get; } = new List<Coordinates>(InitialCapacity);
         public List<Coordinates> PointsUnlimited { get; } = new List<Coordinates>(InitialCapacity);
         public bool IsConnected { get => Port.IsOpen && !tknSource.IsCancellationRequested; }
@@ -302,6 +309,7 @@ namespace CO2Mon.Models
                 {
                     PointsLimited.Clear();
                     PointsUnlimited.Clear();
+                    PointsRaw.Clear();
                 }
             });
         }

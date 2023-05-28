@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using CO2Mon.ViewModels;
 using ScottPlot;
+using ScottPlot.Axis;
 
 namespace CO2Mon.Views;
 
@@ -25,6 +26,8 @@ public partial class MainWindow : Window
         vm.OnDisconnected += ViewModel_Disconnected;
 
         pltMain.Plot.Axes.DateTimeTicks(Edge.Bottom);
+        pltMain.Plot.GetLegend().Alignment = Alignment.LowerLeft;
+        pltMain.Plot.YAxis.Label.Text = "ppm";
     }
 
     public async void Save_Click(object? sender, RoutedEventArgs e)
@@ -79,6 +82,13 @@ public partial class MainWindow : Window
         var unlim = pltMain.Plot.Add.Scatter(viewModel.Controller.PointsUnlimited);
         unlim.Label = "CO2 unlimited";
         unlim.MarkerStyle = MarkerStyle.None;
+        var ry = new ScottPlot.Axis.StandardAxes.RightAxis();
+        ry.Label.Text = "au";
+        pltMain.Plot.YAxes.Add(ry);
+        var raw = pltMain.Plot.Add.Scatter(viewModel.Controller.PointsRaw);
+        raw.Label = "CO2 raw";
+        raw.MarkerStyle = MarkerStyle.None;
+        raw.Axes.YAxis = ry;
         pltMain.Refresh();
     }
     void ViewModel_Disconnected(object? sender, EventArgs e)
