@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-
-using ScottPlot;
-using Avalonia;
+using System.Timers;
+using System.IO;
+using System.Linq;
 
 using CO2Mon.Models;
 using Avalonia.Threading;
-using System.ComponentModel;
 using ReactiveUI;
+
+using Timer = System.Timers.Timer;
 
 namespace CO2Mon.ViewModels;
 
@@ -29,8 +30,14 @@ public class MainWindowViewModel : ViewModelBase
         set {
             if (Controller == null) return;
             if (value == Controller?.IsPolling) return;
-            if (value) Controller?.StartPoll();
-            else Controller?.StopPoll();
+            if (value) 
+            {   
+                Controller?.StartPoll();
+            }
+            else
+            {
+                Controller?.StopPoll();
+            }
             this.RaisePropertyChanged(nameof(IsPolling));
             this.RaisePropertyChanged(nameof(StatusText));
         }

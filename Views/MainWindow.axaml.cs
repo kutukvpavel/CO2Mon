@@ -21,7 +21,7 @@ public partial class MainWindow : Window
 
     void MainWindow_Opened(object? sender, EventArgs e)
     {
-        if (DataContext is not ViewModels.MainWindowViewModel vm) throw new InvalidOperationException("ViewModel can not be null");
+        if (DataContext is not MainWindowViewModel vm) throw new InvalidOperationException("ViewModel can not be null");
         viewModel = vm;
         vm.OnNewDataReceived += ViewModel_NewDataReceived;
         vm.OnConnected += ViewModel_Connected;
@@ -29,8 +29,10 @@ public partial class MainWindow : Window
 
         pltMain.Plot.Axes.DateTimeTicks(Edge.Bottom);
         pltMain.Plot.GetLegend().Alignment = Alignment.LowerLeft;
+        pltMain.Plot.GetLegend().BackgroundFill = new FillStyle() { Color = Colors.Transparent };
         pltMain.Plot.YAxis.Label.Text = "ppm";
         rightYAxis.Label.Text = "Transmittance, au";
+        rightYAxis.Label.Alignment = Alignment.MiddleRight;
         pltMain.Plot.YAxes.Add(rightYAxis);
     }
 

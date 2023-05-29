@@ -11,6 +11,7 @@ using Avalonia.Data;
 using Avalonia.Threading;
 
 using Timer = System.Timers.Timer;
+using System.IO;
 
 namespace CO2Mon.Models
 {
@@ -75,6 +76,7 @@ namespace CO2Mon.Models
         public static int InitialCapacity { get; set; } = 7200; //Points per channel
         public static int ConnectionFailureLimit { get; set; } = 5;
         public static bool AutoDisableABC {get;set;} = true;
+        public static int AutosaveInterval {get;set;} = (int)TimeSpan.FromMinutes(5).TotalSeconds; //Seconds
 
         public static event EventHandler<string>? OnLog;
         private static void Log(object? sender, string s)
@@ -101,6 +103,8 @@ namespace CO2Mon.Models
         {
             Port = p;
             timPoll.Elapsed += timPoll_Elapsed;
+            autosaveTimer = new(AutosaveInterval * 1000) { Enabled = false };
+            autosaveTimer.Elapsed += Autosave_Elapsed;
         }
 
         public event EventHandler<MH_Z19B_DataPoint>? OnNewDataReceived;
@@ -108,6 +112,7 @@ namespace CO2Mon.Models
         public event EventHandler? OnDisconnected;
 
         //Private
+        private readonly Timer autosaveTimer;
         private readonly Timer timPoll = new(PollInterval) { AutoReset = true, Enabled = false };
         private CancellationTokenSource tknSource = new();
         private int connectionFailures = 0;
@@ -215,6 +220,25 @@ namespace CO2Mon.Models
 
             //Cut out the argument to be returned
             return response.Take((int)MH_Z19_Resp_Structure.CRC).Skip((int)MH_Z19_Resp_Structure.ArgumentBegin).ToArray();
+        }
+        private async void Autosave_Elapsed(object? sender, ElapsedEventArgs e)
+        {
+            if (!IsPolling) return;
+
+            try
+            {
+                string folderPath = Path.Combine(Environment.CurrentDirectory, "autosave");
+                var files = Directory.EnumerateFiles(folderPath, "*.csv").OrderBy(x => x).SkipLast(1).ToArray();
+                foreach (var item in files)
+                {
+                    File.Delete(item);
+                }
+                await StorageProvider.StoreAsCsv(this, Path.Combine(folderPath, $"{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.csv"));
+            }
+            catch (Exception ex)
+            {
+                Log(this, $"Failed to perform an autosave: {ex}");
+            }
         }
 
         //Public
